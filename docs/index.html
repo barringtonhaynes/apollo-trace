@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Apollo trace visualiser</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
+    <script src="https://kit.fontawesome.com/dc95a42d6b.js" crossorigin="anonymous"></script>
+    <link href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" rel="stylesheet"
+        type="text/css" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body:not(.fullscreen) {
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            background-color: #f5f5f5;
+        }
+
+        body.fullscreen header,
+        body.fullscreen footer {
+            display: none !important;
+        }
+
+        header {
+            background-color: #444;
+            color: #fff;
+            padding: 20px;
+        }
+
+        header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 18px;
+        }
+
+        body:not(.fullscreen) main {
+            /* max-width: 1200px; */
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+
+        #data-container {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        #data-container input,
+        #data-container textarea {
+            font-size: 16px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        #data-container label {
+            color: #666;
+        }
+
+        #data-container .input-group {
+            position: relative;
+        }
+
+        #data-container .btn-save {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 40px;
+            padding: 0 16px;
+            /* background-color: #007bff; */
+            /* color: #fff; */
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        #data-container .btn-save:hover {
+            background-color: #3cb371;
+        }
+
+        #data-container .btn-save:focus {
+            outline: none;
+        }
+
+        #data-container .fa-save:before {
+            content: "\f0c7";
+        }
+
+        body:not(.fullscreen) #visualisation {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        #toolbox {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transform: translateZ(50px);
+            z-index: 9999;
+        }
+
+        #toolbox.hidden {
+            display: none;
+        }
+
+        #toolbox-content {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        #toolbox-handle {
+            cursor: move;
+            margin-right: 10px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+
+        li {
+            margin-right: 10px;
+            display: inline-block;
+        }
+
+        .toolbox-button {
+            background-color: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .toolbox-button i {
+            font-size: 18px;
+            line-height: 30px;
+            color: #666;
+        }
+
+        .toolbox-button[title]:hover:after {
+            content: attr(title);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 5px;
+            background-color: #000;
+            color: #fff;
+            font-size: 12px;
+            white-space: nowrap;
+            border-radius: 3px;
+        }
+
+        footer {
+            background-color: #444;
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav ul {
+            display: flex;
+            flex-direction: row;
+        }
+
+        nav li {
+            margin-right: 20px;
+        }
+
+        nav li:last-child {
+            margin-right: 0;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        p {
+            font-size: 14px;
+            margin-left: auto;
+        }
+
+        .vis-item .vis-item-overflow {
+            overflow: visible;
+        }
+    </style>
+    <script>
+        var isDragging = false;
+        var lastX;
+        var lastY;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Get the #regex input field
+            var regexInput = document.getElementById('group-regex');
+
+            // Get the "Save" button
+            var saveButton = document.getElementById('save-button');
+
+            // Add a click event listener to the "Save" button
+            saveButton.addEventListener('click', function () {
+                // Get the value of the #regex input field
+                var regexValue = regexInput.value;
+
+                // Set a cookie with the value of the #regex input field
+                document.cookie = 'regex=' + encodeURIComponent(regexValue);
+            });
+
+            // Check if a cookie with the name "regex" exists
+            if (document.cookie.split(';').some(function (item) {
+                    return item.trim().startsWith('regex=');
+                })) {
+                // Get the value of the "regex" cookie
+                var regexCookie = decodeURIComponent(document.cookie.replace(
+                    /(?:(?:^|.*;\s*)regex\s*\=\s*([^;]*).*$)|^.*$/,
+                    "$1"));
+
+                // Set the value of the #regex input field to the value of the "regex" cookie
+                regexInput.value = regexCookie;
+            }
+
+            var toolbox = document.getElementById("toolbox");
+            var handle = document.getElementById("toolbox-handle");
+
+
+            handle.addEventListener("mousedown", function (event) {
+                isDragging = true;
+                lastX = event.clientX;
+                lastY = event.clientY;
+            });
+
+            window.addEventListener("mouseup", function (event) {
+                isDragging = false;
+            });
+
+            window.addEventListener("mousemove", function (event) {
+                if (isDragging) {
+                    var deltaX = event.clientX - lastX;
+                    var deltaY = event.clientY - lastY;
+                    var newX = toolbox.offsetLeft + deltaX;
+                    var newY = toolbox.offsetTop + deltaY;
+                    toolbox.style.left = newX + "px";
+                    toolbox.style.top = newY + "px";
+                    lastX = event.clientX;
+                    lastY = event.clientY;
+                }
+            });
+
+            const toggleInputBtn = document.getElementById("toggle-input");
+            const printBtn = document.getElementById("print");
+            const toggleFullscreenBtn = document.getElementById("toggle-fullscreen");
+
+            function toggleInput() {
+                const dataContaner = document.getElementById("data-container");
+                dataContaner.style.display = dataContaner.style.display === "none" ? "block" : "none";
+
+                toggleInputBtn.title = dataContaner.style.display === "none" ? "Show input" : "Hide input";
+
+                // Change icon
+                const icon = toggleInputBtn.querySelector("i");
+                icon.classList.toggle("fa-eye");
+            }
+
+            function printPage() {
+                window.print();
+            }
+
+            function toggleFullscreen() {
+                document.body.classList.toggle('fullscreen');
+
+                toggleFullscreenBtn.title = document.body.classList.contains('fullscreen') ? "Exit fullscreen" :
+                    "Enter fullscreen";
+
+                const icon = toggleFullscreenBtn.querySelector("i");
+                icon.classList.toggle("fa-expand");
+            }
+
+            function toggleToolbox(event) {
+                document.getElementById('toolbox').classList.toggle('hidden');
+            }
+
+            function keyboardShortcuts(event) {
+                if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+                    if (event.key === 'i' || event.key === 'I') {
+                        toggleInput();
+                    }
+                    if (event.key === 'f' || event.key === 'F') {
+                        toggleFullscreen();
+                    }
+                    if ((event.key === 't' || event.key === 'T')) {
+                        toggleToolbox();
+                    }
+                }
+            }
+
+            toggleInputBtn.addEventListener("click", toggleInput);
+            printBtn.addEventListener("click", printPage);
+            toggleFullscreenBtn.addEventListener("click", toggleFullscreen)
+            document.addEventListener('keydown', keyboardShortcuts);
+        });
+
+        function renderVisualisation(data) {
+            var regexInput = document.getElementById("group-regex");
+            var regexPattern = regexInput.value;
+            var groupRegex = new RegExp(regexPattern);
+
+            var durationRegex = /\((\d+)ms\)/;
+            var startRegex = /\((\d+)\)/;
+
+            var lines = data.split("\n");
+            var items = [];
+
+            for (var i = 0; i < lines.length; i++) {
+                var parts = lines[i].split(" ");
+                var duration = parseInt(durationRegex.exec(parts[2])[1]);
+                var start = parseInt(startRegex.exec(parts[3])[1]);
+                var end = start + duration;
+                var item = {
+                    id: i,
+                    content: parts[0] + " " + parts[1] + " " + parts[2],
+                    // group: parts[1].match(groupRegex)[1],
+                    group: parts[0] === "INVOKE" ? parts[1] : parts[1].split("/")[3],
+                    start,
+                    end,
+                    title: parts[0] + " " + parts[1] + " " + parts[2]
+                };
+                items.push(item);
+            }
+            var min = Math.min.apply(null, items.map(i => i.start));
+            var max = Math.max.apply(null, items.map(i => i.end));
+            items.forEach(i => {
+                i.start -= min;
+                i.end -= min;
+            });
+
+            var groups = [];
+            var groupNames = items.map(i => i.group).filter((v, i, a) => a.indexOf(v) === i);
+            for (var i = 0; i < groupNames.length; i++) {
+                groups.push({
+                    id: i,
+                    content: groupNames[i]
+                });
+            }
+            // console.table(groups)
+            for (var i = 0; i < items.length; i++) {
+                items[i].group = groupNames.indexOf(items[i].group);
+            }
+
+            var visualisationContainer = document.getElementById('visualisation');
+            visualisationContainer.innerHTML = "";
+
+            // console.table(items)
+            var timeline = new vis.Timeline(
+                visualisationContainer,
+                new vis.DataSet(items),
+                new vis.DataSet(groups), {
+                    // width: "500px",
+                    // height: "300px",
+
+                    // align: "box",
+                    groupHeightMode: 'fixed',
+                    // maxMinorChars: 2,
+
+                    horizontalScroll: false,
+                    verticalScroll: false,
+                    // orientation: "top",
+                    moveable: false,
+                    zoomable: false,
+                    editable: false,
+
+                    stack: true,
+
+                    format: {
+                        minorLabels: {
+                            millisecond: 'SSS',
+                            second: 's',
+                            minute: 'HH:mm:ss',
+                            hour: 'HH:mm:ss',
+                            weekday: 'HH:mm:ss',
+                            day: 'HH:mm:ss',
+                            week: 'HH:mm:ss',
+                            month: 'HH:mm:ss',
+                            year: 'HH:mm:ss'
+                        },
+                        majorLabels: {
+                            millisecond: 'HH:mm:ss',
+                            second: 'HH:mm:ss',
+                            minute: '',
+                            hour: '',
+                            weekday: '',
+                            day: '',
+                            week: '',
+                            month: '',
+                            year: ''
+                        }
+                    },
+                }
+            );
+
+            document.getElementById("data-container").style.display = "none";
+            document.getElementById("toolbox").classList.remove("hidden");
+            if (!lastX) {
+                toolbox.style.left = window.innerWidth - 20 - toolbox.offsetWidth + "px";
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <header>
+        <h1>Apollo trace visualiser</h1>
+        <p>Paste apollo trace logs below to visualise them on a timeline.</p>
+        <p>Use the group regex to specify how to extract group names from the logs.</p>
+        <p>Logs need to be in the format,</p>
+        <p>METHOD URL (DURATIONms) (START_TIME)</p>
+        <p>The toolbox can be shown and hidden by pressing the `t` character</p>
+        <div id="data-container">
+            <label for="logs">Trace logs:</label>
+            <textarea id="logs" oninput="renderVisualisation(this.value)" rows="10"
+                placeholder="Paste Apollo trace logs here..."></textarea>
+            <label for="group-regex">Regular expression for group:</label>
+            <div class="input-group">
+                <input type="text" id="group-regex" placeholder="Enter regex to group logs here" />
+                <button id="save-button" class="btn-save"><i class="fas fa-save"></i></button>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div id="visualisation">
+            <p>Visualisation will appear here</p>
+        </div>
+        <div id="toolbox" class="hidden">
+            <div id="toolbox-content">
+                <div id="toolbox-handle"><i class="fa-solid fa-grip-vertical"></i></div>
+                <ul>
+                    <li><button id="toggle-input" class="toolbox-button" title="Show input"><i
+                                class="fa-solid fa-eye-slash"></i></button></li>
+                    <li><button id="print" class="toolbox-button" title="Print"><i
+                                class="fa-solid fa-print"></i></button>
+                    <li><button id="toggle-fullscreen" class="toolbox-button" title="Enter fullscreen"><i
+                                class="fa-solid fa-expand fa-compress"></i></button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <nav>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </nav>
+        <p>&copy; 2023 Barrington Haynes. All rights reserved.</p>
+    </footer>
+</body>
+
+
+</html>
