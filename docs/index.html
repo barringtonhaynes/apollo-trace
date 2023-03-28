@@ -446,6 +446,8 @@
             if (!lastX) {
                 toolbox.style.left = window.innerWidth - 20 - toolbox.offsetWidth + "px";
             }
+            
+            posthog.capture('renderVisualisation', { itemCount: items.length })
         }
     </script>
 </head>
