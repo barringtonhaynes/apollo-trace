@@ -296,10 +296,14 @@
                 // Change icon
                 const icon = toggleInputBtn.querySelector("i");
                 icon.classList.toggle("fa-eye");
+                
+                posthog.capture('toggleInput', { visible: dataContaner.style.display === "none" ? false : true })
             }
 
             function printPage() {
+                posthog.capture('printPage', { })
                 window.print();
+                
             }
 
             function toggleFullscreen() {
@@ -310,10 +314,13 @@
 
                 const icon = toggleFullscreenBtn.querySelector("i");
                 icon.classList.toggle("fa-expand");
+                
+                posthog.capture('toggleFullscreen', { fullscreen: toggleFullscreenBtn.style.display === "none" ? false : true })
             }
 
             function toggleToolbox(event) {
                 document.getElementById('toolbox').classList.toggle('hidden');
+                posthog.capture('toggleToolbox', { visible: document.getElementById('toolbox').style.visibility === "hidden" ? false : true })
             }
 
             function keyboardShortcuts(event) {
