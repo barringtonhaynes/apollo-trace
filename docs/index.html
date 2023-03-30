@@ -225,6 +225,17 @@
         var lastX;
         var lastY;
 
+        function populateTracesFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const compressedText = params.get('t');
+
+            if (compressedText) {
+                const textarea = document.querySelector('#logs');
+                const decompressedText = LZString.decompressFromBase64(compressedText);
+                textarea.value = decompressedText;
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             // Get the #regex input field
             var regexInput = document.getElementById('group-regex');
@@ -327,7 +338,8 @@
                 const compressedText = LZString.compressToBase64(textarea.value);
 
                 const params = new URLSearchParams();
-                params.append('text', compressedText);
+                params.append('t', compressedText);
+                params.append('v', 1);
 
                 const url = window.location.href.split('?')[0] + '?' + params.toString();
 
@@ -357,6 +369,8 @@
             toggleFullscreenBtn.addEventListener("click", toggleFullscreen);
             shareTraceBtn.addEventListener("click", shareTrace);
             document.addEventListener('keydown', keyboardShortcuts);
+            
+            populateTracesFromUrl();
         });
 
         function renderVisualisation(data) {
