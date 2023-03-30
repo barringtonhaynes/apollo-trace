@@ -233,6 +233,7 @@
                 const textarea = document.querySelector('#logs');
                 const decompressedText = LZString.decompressFromBase64(compressedText);
                 textarea.value = decompressedText;
+                renderVisualisation(decompressedText);
             }
         }
 
