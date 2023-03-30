@@ -284,6 +284,7 @@
             const toggleInputBtn = document.getElementById("toggle-input");
             const printBtn = document.getElementById("print");
             const toggleFullscreenBtn = document.getElementById("toggle-fullscreen");
+            const shareTraceBtn = document.getElementById("share-trace");
 
             function toggleInput() {
                 const dataContaner = document.getElementById("data-container");
@@ -320,6 +321,22 @@
                 document.getElementById('toolbox').classList.toggle('hidden');
                 posthog.capture('toggleToolbox', { visible: document.getElementById('toolbox').style.visibility === "hidden" ? false : true })
             }
+            
+            function shareTrace() {
+                const textarea = document.querySelector('#logs');
+                const compressedText = LZString.compressToBase64(textarea.value);
+
+                const params = new URLSearchParams();
+                params.append('text', compressedText);
+
+                const url = window.location.href.split('?')[0] + '?' + params.toString();
+
+                navigator.clipboard.writeText(url).then(() => {
+                    window.alert("URL copied to clipboard");
+                }).catch((err) => {
+                    window.alert("Failed to copy URL to clipboard: " + err);
+                });
+            }
 
             function keyboardShortcuts(event) {
                 if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
@@ -337,7 +354,8 @@
 
             toggleInputBtn.addEventListener("click", toggleInput);
             printBtn.addEventListener("click", printPage);
-            toggleFullscreenBtn.addEventListener("click", toggleFullscreen)
+            toggleFullscreenBtn.addEventListener("click", toggleFullscreen);
+            shareTraceBtn.addEventListener("click", shareTrace);
             document.addEventListener('keydown', keyboardShortcuts);
         });
 
@@ -483,6 +501,9 @@
                                 class="fa-solid fa-print"></i></button>
                     <li><button id="toggle-fullscreen" class="toolbox-button" title="Enter fullscreen"><i
                                 class="fa-solid fa-expand fa-compress"></i></button>
+                    </li>
+                    <li><button id="share-trace" class="toolbox-button" title="Share trace"><i
+                                class="fa-solid fa-share"></i></button>
                     </li>
                 </ul>
             </div>
