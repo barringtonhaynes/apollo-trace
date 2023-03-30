@@ -181,6 +181,20 @@
             white-space: nowrap;
             border-radius: 3px;
         }
+        
+        .toolbox-label {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .toolbox-button-alert {
+            color: red;
+        }
+
+        .toolbox-button:hover i {
+            color: #000;
+        }
 
         footer {
             background-color: #444;
@@ -389,23 +403,37 @@
 
             var lines = data.split("\n");
             var items = [];
+            var errors = [];
+            var lowestStartTime = Number.MAX_VALUE;
+            var highestStartTime = 0;
 
             for (var i = 0; i < lines.length; i++) {
-                var parts = lines[i].split(" ");
-                var duration = parseInt(durationRegex.exec(parts[2])[1]);
-                var start = parseInt(startRegex.exec(parts[3])[1]);
-                var end = start + duration;
-                var item = {
-                    id: i,
-                    content: parts[0] + " " + parts[1] + " " + parts[2],
-                    // group: parts[1].match(groupRegex)[1],
-                    group: parts[0] === "INVOKE" ? parts[1] : parts[1].split("/")[3],
-                    start,
-                    end,
-                    title: parts[0] + " " + parts[1] + " " + parts[2]
-                };
-                items.push(item);
+                try {
+                    var parts = lines[i].split(" ");
+                    var duration = parseInt(durationRegex.exec(parts[2])[1]);
+                    var start = parseInt(startRegex.exec(parts[3])[1]);
+                    var end = start + duration;
+                    var item = {
+                        id: i,
+                        content: parts[0] + " " + parts[1] + " " + parts[2],
+                        // group: parts[1].match(groupRegex)[1],
+                        group: parts[0] === "INVOKE" ? parts[1] : parts[1].split("/")[3],
+                        start,
+                        end,
+                        title: parts[0] + " " + parts[1] + " " + parts[2]
+                    };
+                    items.push(item);
+                    if (start < lowestStartTime) {
+                        lowestStartTime = start;
+                    }
+                    if (start > highestStartTime) {
+                        highestStartTime = start;
+                    }
+                } catch (error) {
+                    errors.push(lines[i]);
+                }
             }
+            var lapsedTime = highestStartTime - lowestStartTime + duration;
             var min = Math.min.apply(null, items.map(i => i.start));
             var max = Math.max.apply(null, items.map(i => i.end));
             items.forEach(i => {
@@ -476,6 +504,27 @@
                     },
                 }
             );
+
+            function showErrors() {
+                alert('Errors found: ' + errors.join('\n'));
+            }
+
+            var lapsedTimeLabel = document.createElement('div');
+            lapsedTimeLabel.classList.add('toolbox-label');
+            lapsedTimeLabel.innerHTML = 'Lapsed Time: ' + lapsedTime + 'ms';
+
+            var errorsButton = document.createElement('button');
+            errorsButton.classList.add('toolbox-button');
+            errorsButton.title = 'Errors';
+            errorsButton.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i>';
+            if (errors.length > 0) {
+                errorsButton.classList.add('toolbox-button-alert');
+            }
+            errorsButton.onclick = showErrors;
+
+            var toolboxContent = document.getElementById('toolbox-content');
+            toolboxContent.appendChild(lapsedTimeLabel);
+            toolboxContent.appendChild(errorsButton);
 
             document.getElementById("data-container").style.display = "none";
             document.getElementById("toolbox").classList.remove("hidden");
