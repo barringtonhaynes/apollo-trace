@@ -197,10 +197,6 @@
             color: #000;
         }
 
-        .toolbox-button-alert:hover i {
-            color: red;
-        }
-
         footer {
             background-color: #444;
             color: #fff;
@@ -250,9 +246,12 @@
         .modal-content {
           background-color: #fefefe;
           margin: 15% auto;
-          padding: 20px;
-          border: 1px solid #888;
+          border: 1px solid #ccc;
+          padding: 0;
+          border-radius: 5px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
           width: 80%;
+          height: 60%;
         }
 
         .modal-title {
@@ -280,6 +279,12 @@
 
         .modal-close:hover {
           color: #555;
+        }
+        
+        .modal textarea {
+          margin: 5px;
+          width: 100%;
+          height: 100%;
         }
 
         .vis-item .vis-item-overflow {
@@ -649,8 +654,8 @@
     <div id="error-modal" class="modal">
       <div class="modal-content">
         <div class="modal-title">
-          <span class="modal-close">&times;</span>
           <h2>Error Log</h2>
+          <span class="modal-close">&times;</span>        
         </div>
         <textarea id="error-textarea"></textarea>
       </div>
