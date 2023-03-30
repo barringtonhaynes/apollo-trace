@@ -193,12 +193,12 @@
             display: inline-block;
         }
 
-        .toolbox-button-alert {
-            color: red;
-        }
-
         .toolbox-button:hover i {
             color: #000;
+        }
+
+        .toolbox-button-alert:hover i {
+            color: red;
         }
 
         footer {
@@ -233,6 +233,40 @@
         p {
             font-size: 14px;
             margin-left: auto;
+        }
+        
+        .modal {
+          display: none;
+          position: fixed;
+          z-index: 1;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+          background-color: #fefefe;
+          margin: 15% auto;
+          padding: 20px;
+          border: 1px solid #888;
+          width: 80%;
+        }
+
+        .modal-close {
+          color: #aaaaaa;
+          float: right;
+          font-size: 28px;
+          font-weight: bold;
+        }
+
+        .modal-close:hover,
+        .modal-close:focus {
+          color: #000;
+          text-decoration: none;
+          cursor: pointer;
         }
 
         .vis-item .vis-item-overflow {
@@ -511,7 +545,15 @@
             );
 
             function showErrors() {
-                alert('Errors found: ' + errors.join('\n'));
+                var errorModal = document.getElementById("error-modal");
+                var errorTextarea = document.getElementById("error-textarea");
+                errorTextarea.value = errors.join("\n");
+                errorModal.style.display = "block";
+
+                var modalClose = document.getElementsByClassName("modal-close")[0];
+                modalClose.onclick = function() {
+                    errorModal.style.display = "none";
+                };
             }
 
             var lapsedTimeLabel = document.getElementById('lapsed-time');
@@ -591,6 +633,12 @@
         </nav>
         <p>&copy; 2023 Barrington Haynes. All rights reserved.</p>
     </footer>
+    <div id="error-modal" class="modal">
+      <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <textarea id="error-textarea"></textarea>
+      </div>
+    </div>
     <script src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
     <script src="https://kit.fontawesome.com/dc95a42d6b.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js" integrity="sha512-qoCTmFwBtCPvFhA+WAqatSOrghwpDhFHxwAGh+cppWonXbHA09nG1z5zi4/NGnp8dUhXiVrzA6EnKgJA+fyrpw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
