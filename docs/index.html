@@ -255,18 +255,31 @@
           width: 80%;
         }
 
-        .modal-close {
-          color: #aaaaaa;
-          float: right;
-          font-size: 28px;
-          font-weight: bold;
+        .modal-title {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+          background-color: #eee;
+          padding: 10px;
+          border-top-left-radius: 5px;
+          border-top-right-radius: 5px;
         }
 
-        .modal-close:hover,
-        .modal-close:focus {
-          color: #000;
-          text-decoration: none;
+        .modal-title h2 {
+          font-size: 18px;
+          margin: 0;
+        }
+
+        .modal-close {
+          color: #aaa;
+          font-size: 22px;
+          font-weight: bold;
           cursor: pointer;
+        }
+
+        .modal-close:hover {
+          color: #555;
         }
 
         .vis-item .vis-item-overflow {
@@ -635,7 +648,10 @@
     </footer>
     <div id="error-modal" class="modal">
       <div class="modal-content">
-        <span class="modal-close">&times;</span>
+        <div class="modal-title">
+          <span class="modal-close">&times;</span>
+          <h2>Error Log</h2>
+        </div>
         <textarea id="error-textarea"></textarea>
       </div>
     </div>
