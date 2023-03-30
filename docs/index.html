@@ -185,7 +185,12 @@
         .toolbox-label {
             font-size: 16px;
             margin-bottom: 5px;
-            color: #666;
+            color: #fff;
+            background-color: #444;
+            padding: 5px 10px;
+            border-radius: 3px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+            display: inline-block;
         }
 
         .toolbox-button-alert {
@@ -509,22 +514,16 @@
                 alert('Errors found: ' + errors.join('\n'));
             }
 
-            var lapsedTimeLabel = document.createElement('div');
-            lapsedTimeLabel.classList.add('toolbox-label');
-            lapsedTimeLabel.innerHTML = 'Lapsed Time: ' + lapsedTime + 'ms';
+            var lapsedTimeLabel = document.getElementById('lapsed-time');
+            lapsedTimeLabel.innerHTML = (lapsedTime / 1000).toFixed(3) + 's';
 
-            var errorsButton = document.createElement('button');
-            errorsButton.classList.add('toolbox-button');
-            errorsButton.title = 'Errors';
-            errorsButton.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i>';
+            var errorsButton = document.getElementById('view-errors');
             if (errors.length > 0) {
-                errorsButton.classList.add('toolbox-button-alert');
+                errorsButton.style.display = "block";
+            } else {
+                errorsButton.style.display = "none";
             }
             errorsButton.onclick = showErrors;
-
-            var toolboxContent = document.getElementById('toolbox-content');
-            toolboxContent.appendChild(lapsedTimeLabel);
-            toolboxContent.appendChild(errorsButton);
 
             document.getElementById("data-container").style.display = "none";
             document.getElementById("toolbox").classList.remove("hidden");
@@ -574,7 +573,11 @@
                     <li><button id="share-trace" class="toolbox-button" title="Share trace"><i
                                 class="fa-solid fa-share"></i></button>
                     </li>
+                    <li><button id="view-errors" class="toolbox-button toolbox-button-alert" title="View errors"><i
+                                class="fa-solid fa-exclamation-triangle"></i></button>
+                    </li>
                 </ul>
+                <div id="lapsed-time" class="toolbox-label" title="Lapsed time">0.000s</div>
             </div>
         </div>
     </main>
